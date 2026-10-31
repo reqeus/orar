@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Evidență orar de lucru asistenți medicali - Dr.Palmas">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="icon.svg">
+  <title>Dr.Palmas - Orar</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Export libraries (locale pentru fiabilitate maxima offline & iOS Safari) -->
+  <script src="html2canvas.min.js" defer></script>
+  <script src="jspdf.umd.min.js" defer></script>
+</head>
+<body>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app" class="calendar-app-container">
+
+    <!-- TOP HEADER -->
+    <header class="amoled-header">
+      <div class="header-left">
+        <button id="btn-open-drawer" class="icon-touch-btn" aria-label="Meniu Opțiuni & Raport">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="header-center">
+        <button id="btn-month-prev" class="month-chevron" aria-label="Luna anterioară">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div class="month-title-wrap">
+          <h1 id="amoled-month-title" class="month-title-text">Septembrie</h1>
+          <span id="amoled-year-sub" class="month-year-sub">2026</span>
+        </div>
+        <button id="btn-month-next" class="month-chevron" aria-label="Luna următoare">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+
+      <div class="header-right">
+        <button id="btn-go-today" class="today-square-icon" title="Sari la ziua de azi">
+          <span id="today-day-number">20</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- WEEKDAY HEADER (L M M J V S D) -->
+    <div class="weekdays-strip">
+      <div class="weekday-col">L</div>
+      <div class="weekday-col">M</div>
+      <div class="weekday-col">M</div>
+      <div class="weekday-col">J</div>
+      <div class="weekday-col">V</div>
+      <div class="weekday-col">S</div>
+      <div class="weekday-col weekend-sun">D</div>
+    </div>
+
+    <!-- CALENDAR VIEW -->
+    <main id="amoled-calendar-view" class="calendar-screen active">
+      <div id="amoled-month-grid" class="amoled-grid">
+        <!-- Injected via JavaScript -->
+      </div>
+    </main>
+
+    <!-- FLOATING BOTTOM BAR -->
+    <div class="floating-bottom-bar">
+      <div class="bottom-bar-header">
+        <span class="selected-date-indicator" id="selected-date-label">Ziua: 20 Sep 2026</span>
+        <button type="button" id="btn-edit-existing-details" class="edit-details-link" style="display: none;">
+          Modifică
+        </button>
+      </div>
+
+      <div class="bottom-actions-row">
+        <button type="button" id="btn-log-entry" class="punch-btn btn-entry">
+          <div class="punch-icon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+          </div>
+          <div class="punch-info">
+            <span class="punch-label">Intrare</span>
+            <span id="lbl-entry-time" class="punch-value">--:--</span>
+          </div>
+        </button>
+
+        <button type="button" id="btn-log-exit" class="punch-btn btn-exit">
+          <div class="punch-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+          </div>
+          <div class="punch-info">
+            <span class="punch-label">Ieșire</span>
+            <span id="lbl-exit-time" class="punch-value">--:--</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- TIME PICKER MODAL (CENTRAT PE ECRAN) -->
+    <div id="time-picker-modal" class="modal-backdrop" aria-hidden="true">
+      <div class="time-picker-card">
+        <div class="modal-header-amoled">
+          <h3 id="time-picker-title">Ora Intrării</h3>
+          <button id="btn-close-time-picker" class="sheet-close-btn" aria-label="Închide">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        
+        <div class="time-picker-body">
+          <!-- Grila 2x2: Acum, Full, Part, Manual -->
+          <div class="time-presets-grid" id="time-presets-container"></div>
+
+          <!-- Selector Manual 24h curat (fara AM/PM, apare la click pe 'Manual') -->
+          <div id="manual-picker-section" class="manual-picker-container" style="display: none;">
+            <div class="picker-24h-row">
+              <div class="picker-unit">
+                <label for="select-hour-24">Ora</label>
+                <select id="select-hour-24" class="time-select-amoled"></select>
+              </div>
+              <span class="picker-sep">:</span>
+              <div class="picker-unit">
+                <label for="select-min-24">Minut</label>
+                <select id="select-min-24" class="time-select-amoled"></select>
+              </div>
+            </div>
+            <button type="button" id="btn-confirm-time" class="btn-primary-mono sm-mt">Confirmă</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAILS MODAL: CABINET, MEDIC, KPI (CENTRAT PE ECRAN) -->
+    <div id="details-backdrop" class="modal-backdrop" aria-hidden="true">
+      <div id="details-sheet" class="center-modal-card" role="dialog" aria-modal="true">
+        <div class="modal-header-amoled">
+          <div class="sheet-date-block">
+            <span class="day-pill-sub" id="details-day-badge">Detalii</span>
+            <h2 id="details-date-title" class="sheet-title-text">20 Septembrie 2026</h2>
+          </div>
+          <button id="btn-close-details" class="sheet-close-btn" aria-label="Închide">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="sheet-scroll-body">
+          <div class="hours-summary-banner">
+            <span id="details-summary-interval" class="interval-text">08:30 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline-arrow"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg> 16:30</span>
+            <div class="hours-summary-badges">
+              <div class="shift-type-switch" id="shift-type-toggle" role="group" aria-label="Tip tură">
+                <button type="button" class="shift-switch-btn active" id="btn-shift-type-full" data-shift-type="full">Full</button>
+                <button type="button" class="shift-switch-btn" id="btn-shift-type-part" data-shift-type="part">Part</button>
+              </div>
+              <span id="details-summary-duration" class="hours-badge">8.0 ore</span>
+              <span id="details-summary-bonus" class="hours-badge bonus-badge" style="display: none;">+0h bonus</span>
+            </div>
+          </div>
+
+          <div class="two-cols-row">
+            <div class="amoled-field-group">
+              <label class="field-title" for="btn-select-cabinet">Cabinet</label>
+              <div class="custom-select-wrapper" id="wrapper-cabinet">
+                <button type="button" class="custom-select-trigger" id="btn-select-cabinet" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="custom-select-value" id="val-select-cabinet">Selectează</span>
+                  <svg class="custom-select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="custom-select-menu" id="menu-select-cabinet" role="listbox"></div>
+                <input type="hidden" id="select-cabinet" value="">
+              </div>
+            </div>
+
+            <div class="amoled-field-group">
+              <label class="field-title" for="btn-select-doctor">Medic</label>
+              <div class="custom-select-wrapper" id="wrapper-doctor">
+                <button type="button" class="custom-select-trigger" id="btn-select-doctor" aria-haspopup="listbox" aria-expanded="false">
+                  <span class="custom-select-value" id="val-select-doctor">Selectează</span>
+                  <svg class="custom-select-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="custom-select-menu" id="menu-select-doctor" role="listbox"></div>
+                <input type="hidden" id="select-doctor" value="">
+              </div>
+            </div>
+          </div>
+
+          <div class="amoled-field-group">
+            <div class="field-label-row">
+              <span class="field-title">KPI</span>
+            </div>
+
+            <div class="kpi-chips-strip" id="details-kpi-strip">
+              <!-- Generat dinamic din lista de KPI configurate -->
+            </div>
+
+            <input type="text" id="input-activities" class="amoled-input" placeholder="ex: 2 OPG, Sedare (40 min)" value="—">
+          </div>
+
+          <div class="sheet-buttons-row">
+            <button type="button" id="btn-save-full-shift" class="btn-primary-mono">Salvează</button>
+            <button type="button" id="btn-delete-full-shift" class="btn-secondary-mono" style="display: none;">Șterge</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOM KPI DURATION MODAL (CENTRAT PE ECRAN) -->
+    <div id="kpi-duration-modal" class="modal-backdrop" aria-hidden="true">
+      <div class="time-picker-card duration-picker-card">
+        <div class="modal-header-amoled">
+          <div>
+            <span class="day-pill-sub" id="kpi-duration-badge">Activitate Extra</span>
+            <h3 id="kpi-duration-title">Sedare</h3>
+          </div>
+          <button id="btn-close-kpi-duration" class="sheet-close-btn" aria-label="Închide">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="time-picker-body">
+          <div class="kpi-mode-toggle" id="kpi-mode-toggle">
+            <button type="button" class="btn-type-opt active" id="btn-kpi-mode-interval">Interval orar</button>
+            <button type="button" class="btn-type-opt" id="btn-kpi-mode-duration">Durată</button>
+          </div>
+
+          <!-- Mod 1: Interval orar (De la - Până la cu formatul manual Ora : Minut) -->
+          <div id="kpi-interval-section" class="kpi-picker-section">
+            <div class="kpi-interval-wrap">
+              <div class="manual-picker-container kpi-picker-box">
+                <div class="kpi-box-label">De la</div>
+                <div class="picker-24h-row">
+                  <div class="picker-unit">
+                    <label for="select-kpi-start-h">Ora</label>
+                    <select id="select-kpi-start-h" class="time-select-amoled"></select>
+                  </div>
+                  <span class="picker-sep">:</span>
+                  <div class="picker-unit">
+                    <label for="select-kpi-start-m">Minut</label>
+                    <select id="select-kpi-start-m" class="time-select-amoled"></select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="manual-picker-container kpi-picker-box">
+                <div class="kpi-box-label">Până la</div>
+                <div class="picker-24h-row">
+                  <div class="picker-unit">
+                    <label for="select-kpi-end-h">Ora</label>
+                    <select id="select-kpi-end-h" class="time-select-amoled"></select>
+                  </div>
+                  <span class="picker-sep">:</span>
+                  <div class="picker-unit">
+                    <label for="select-kpi-end-m">Minut</label>
+                    <select id="select-kpi-end-m" class="time-select-amoled"></select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="kpi-interval-calc-badge" class="interval-calc-badge" style="display: none;">
+              Durată: <span id="kpi-interval-calc-text">0 min</span>
+            </div>
+          </div>
+
+          <!-- Mod 2: Durată (Ore : Minute) -->
+          <div id="kpi-duration-section" class="kpi-picker-section" style="display: none;">
+            <div class="manual-picker-container kpi-picker-box">
+              <div class="picker-24h-row">
+                <div class="picker-unit">
+                  <label for="select-kpi-hours">Ore</label>
+                  <select id="select-kpi-hours" class="time-select-amoled"></select>
+                </div>
+                <span class="picker-sep">:</span>
+                <div class="picker-unit">
+                  <label for="select-kpi-minutes">Minut</label>
+                  <select id="select-kpi-minutes" class="time-select-amoled"></select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" id="btn-confirm-kpi-duration" class="btn-primary-mono sm-mt">Confirmă</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORT TABLE VIEW (COMPACT) -->
+    <div id="report-view-overlay" class="report-overlay" aria-hidden="true">
+      <header class="report-header-clean">
+        <button id="btn-close-report-view" class="back-link-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          <span>Calendar</span>
+        </button>
+        <span class="report-header-month" id="report-month-title-clean">Septembrie 2026</span>
+        <div class="report-header-space"></div>
+      </header>
+
+      <div class="report-page-body">
+        <!-- Butoane pe o linie doar cu un cuvant -->
+        <div class="report-actions-row-single">
+          <button id="btn-copy-teams" class="btn-single-word">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Teams</span>
+          </button>
+          <button id="btn-export-screenshot" class="btn-single-word">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+            <span>Imagine</span>
+          </button>
+          <button id="btn-export-pdf" class="btn-single-word">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <span>PDF</span>
+          </button>
+        </div>
+
+        <!-- Tabel compact -->
+        <div id="report-capture-area" class="report-direct-container">
+          <div class="capture-header-banner" id="capture-header-banner">
+            <span class="capture-title-clinic">Dr.Palmas</span>
+            <span class="capture-title-sub" id="capture-month-sub">Septembrie 2026</span>
+          </div>
+          <div class="table-horizontal-scroll">
+            <table id="official-shifts-table" class="clean-shifts-table">
+              <thead>
+                <tr>
+                  <th class="col-date">Data</th>
+                  <th class="col-type">Tip</th>
+                  <th class="col-time">Intrare</th>
+                  <th class="col-time">Ieșire</th>
+                  <th class="col-hours">Ore</th>
+                  <th class="col-bonus">Bonus</th>
+                  <th class="col-cab">Cabinet</th>
+                  <th class="col-doc">Medic</th>
+                  <th class="col-kpi">KPI</th>
+                  <th class="col-actions no-capture">
+                    <div class="table-header-actions">
+                      <button type="button" id="btn-sync-upload-all" class="table-action-btn sync-btn upload" title="Încarcă toate datele în cloud" aria-label="Încarcă toate datele în cloud">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      </button>
+                      <button type="button" id="btn-sync-download-all" class="table-action-btn sync-btn download" title="Descarcă toate datele din cloud" aria-label="Descarcă toate datele din cloud">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      </button>
+                    </div>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="official-table-body">
+                <!-- Injected via JS -->
+              </tbody>
+              <tfoot>
+                <tr class="clean-totals-row">
+                  <td colspan="6" id="table-totals-hours">Total: 0h</td>
+                  <td colspan="4" id="table-totals-kpi">0 OPG, 0 CT</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MENIU OPȚIUNI (CENTRAT PE ECRAN) -->
+    <div id="drawer-backdrop" class="modal-backdrop" aria-hidden="true">
+      <div id="drawer-menu" class="center-modal-card drawer-modal-card" role="dialog" aria-modal="true">
+        <div class="drawer-header">
+          <div class="drawer-brand">
+            <div>
+              <div class="drawer-title">Dr.Palmas</div>
+              <div class="drawer-subtitle">Orar Asistenți</div>
+            </div>
+          </div>
+          <button id="btn-close-drawer" class="sheet-close-btn" aria-label="Închide meniu">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+
+        <div class="drawer-body">
+          <div class="drawer-group">
+            <label class="drawer-group-title">Navigare</label>
+            <button id="drawer-link-calendar" class="drawer-nav-item active">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span>Calendar</span>
+            </button>
+            <button id="drawer-link-report" class="drawer-nav-item">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              <span>Raport</span>
+            </button>
+          </div>
+
+          <div class="drawer-group">
+            <label class="drawer-group-title">Asistent</label>
+            <input type="text" id="drawer-assistant-input" class="amoled-input" placeholder="Nume Asistent">
+          </div>
+
+          <div class="drawer-group">
+            <label class="drawer-group-title">Medici</label>
+            <div id="drawer-doctors-list" class="tags-collection"></div>
+            <div class="add-tag-row">
+              <input type="text" id="drawer-new-doctor" class="amoled-input sm" placeholder="Dr. Nou">
+              <button type="button" id="drawer-btn-add-doc" class="btn-amoled-sm" aria-label="Adaugă medic">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="drawer-group">
+            <label class="drawer-group-title">Cabinete</label>
+            <div id="drawer-cabinets-list" class="tags-collection"></div>
+            <div class="add-tag-row">
+              <input type="text" id="drawer-new-cabinet" class="amoled-input sm" placeholder="Cabinet Nou">
+              <button type="button" id="drawer-btn-add-cab" class="btn-amoled-sm" aria-label="Adaugă cabinet">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="drawer-group">
+            <label class="drawer-group-title">Activități KPI</label>
+            <div id="drawer-kpis-list" class="tags-collection"></div>
+            <div class="add-kpi-row">
+              <input type="text" id="drawer-new-kpi-name" class="amoled-input sm" placeholder="Nume KPI (ex: Sterilizare)">
+              <div class="kpi-type-toggle" id="drawer-kpi-type-toggle">
+                <button type="button" class="btn-type-opt active" data-type="volume" id="btn-kpi-type-volume">Volum</button>
+                <button type="button" class="btn-type-opt" data-type="duration" id="btn-kpi-type-duration">Durată</button>
+              </div>
+              <button type="button" id="drawer-btn-add-kpi" class="btn-amoled-sm" aria-label="Adaugă KPI">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="drawer-group">
+            <div class="drawer-group-header-row">
+              <label class="drawer-group-title">Sincronizare Cloud</label>
+              <div class="sync-status-pill">
+                <span id="sync-status-dot" class="sync-status-dot"></span>
+                <span id="sync-status-text" class="sync-status-label">Inactiv</span>
+              </div>
+            </div>
+            <div class="add-tag-row">
+              <input type="text" id="sync-code-input" class="amoled-input sm" placeholder="Cod Unic (ex: oprea-2026)">
+              <button type="button" id="btn-toggle-sync" class="btn-sync-action" aria-label="Conectare sincronizare">
+                <span id="btn-sync-text">Conectează</span>
+              </button>
+            </div>
+            <div id="sync-config-panel" class="sync-config-panel" style="display: none;">
+              <textarea id="sync-config-textarea" class="amoled-input sm" rows="3" placeholder="Lipește Firebase Config (JSON)"></textarea>
+              <button type="button" id="btn-save-sync-config" class="btn-sync-action">Salvează Config</button>
+            </div>
+            <div class="sync-sub-row">
+              <button type="button" id="btn-toggle-config-view" class="drawer-sublink-btn">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <span>Configurare Firebase</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="drawer-group">
+            <label class="drawer-group-title">Date Locale</label>
+            <div class="drawer-actions-row">
+              <input type="file" id="drawer-file-import" accept=".json" style="display: none;">
+              <button type="button" id="drawer-btn-import-backup" class="drawer-action-btn-compact" title="Importă fișier JSON">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <span>Încarcă</span>
+              </button>
+              <button type="button" id="drawer-btn-export-backup" class="drawer-action-btn-compact" title="Exportă fișier JSON">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Descarcă</span>
+              </button>
+              <button type="button" id="drawer-btn-clear" class="drawer-action-btn-compact danger" title="Șterge datele locale">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <span>Șterge</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCREENSHOT MODAL -->
+    <div id="screenshot-modal" class="modal-backdrop" aria-hidden="true">
+      <div class="amoled-modal-card">
+        <div class="modal-header-amoled">
+          <h3>Imagine WhatsApp</h3>
+          <button id="btn-close-screenshot-modal" class="sheet-close-btn" aria-label="Închide">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-content-amoled">
+          <div id="screenshot-preview-container" class="screenshot-box"></div>
+        </div>
+        <div class="modal-actions-amoled">
+          <button type="button" id="btn-share-whatsapp" class="btn-primary-mono">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <span>Partajează</span>
+          </button>
+          <button type="button" id="btn-copy-clipboard" class="btn-secondary-mono">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copiază</span>
+          </button>
+          <button type="button" id="btn-download-img" class="btn-secondary-mono">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Descarcă</span>
+          </button>
+        </div>
+        <div class="ios-hint-box">
+          <span>Pe iPhone poți ține apăsat pe imagine pentru „Salvare în Poze” sau „Copiere”.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification discret -->
+    <div id="toast" class="amoled-toast" aria-live="polite"></div>
+
+  </div>
+
+  <!-- Firebase App & Firestore Compat (CDN) -->
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="sync.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

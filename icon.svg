@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="100%" stop-color="#4facfe" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="#0b132b" />
+  <circle cx="256" cy="256" r="190" fill="#1c2541" />
+  <!-- Tooth / Medical Schedule Icon -->
+  <path d="M256 120 C 190 120, 160 160, 160 210 C 160 270, 180 320, 210 390 C 225 425, 245 420, 256 360 C 267 420, 287 425, 302 390 C 332 320, 352 270, 352 210 C 352 160, 322 120, 256 120 Z" 
+        fill="url(#grad)" filter="url(#glow)"/>
+  <!-- Clock hands overlay -->
+  <circle cx="256" cy="230" r="45" fill="#0b132b" opacity="0.85" />
+  <path d="M256 200 L256 230 L275 240" stroke="#00f2fe" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="256" cy="230" r="4" fill="#ffffff" />
+</svg>

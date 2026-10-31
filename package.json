@@ -1,0 +1,19 @@
+{
+  "name": "orar-clinica-stomatologica",
+  "version": "1.0.0",
+  "description": "Aplicatie PWA de evidenta orar si raportare automata (PDF & Screenshot WhatsApp) pentru asistenti medicali",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [
+    "orar",
+    "asistenti-medicali",
+    "clinica-stomatologica",
+    "kpi",
+    "pdf-export",
+    "pwa"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}
